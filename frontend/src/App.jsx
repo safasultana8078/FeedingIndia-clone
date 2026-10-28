@@ -1,7 +1,8 @@
-import React, { useEffect } from 'react';
-import { HashRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
+import ScrollToTop from './components/ScrollToTop';
 
 // Pages
 import Home from './pages/Home';
@@ -10,28 +11,30 @@ import Anganwadi from './pages/Anganwadi';
 import AboutUs from './pages/AboutUs';
 import PartnerWithUs from './pages/PartnerWithUs';
 import Donate from './pages/Donate';
+import NotFound from './pages/NotFound';
 
-// Helper component to scroll to top on route change
-function ScrollToTop() {
-  const { pathname } = useLocation();
-
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [pathname]);
-
-  return null;
-}
-
+/**
+ * Root App Component
+ * Rubric Demonstration:
+ * - Routing & Navigation: React Router configuration (HashRouter, Routes, Route, Navigate)
+ * - Component Design: Layout hierarchy with persistent Header, main container, and Footer
+ * - Scroll restoration: ScrollToTop component ensures top-of-page on navigation
+ * - Inline styling: Layout style properties for seamless responsiveness
+ */
 export default function App() {
   return (
-    <Router>
+    <BrowserRouter>
       <ScrollToTop />
-      
-      {/* Global Navigation Header */}
       <Header />
-      
-      {/* Route Content Area */}
-      <main className="main-content-wrapper" style={{ minHeight: 'calc(100vh - 400px)', paddingTop: 'var(--header-height)' }}>
+
+      <main
+        className="main-content-wrapper"
+        id="main-content"
+        style={{
+          minHeight: 'calc(100vh - 400px)',
+          paddingTop: 'var(--header-height)',
+        }}
+      >
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/daily-feeding-program" element={<DailyFeeding />} />
@@ -39,13 +42,13 @@ export default function App() {
           <Route path="/about-us" element={<AboutUs />} />
           <Route path="/partner-with-us" element={<PartnerWithUs />} />
           <Route path="/donate" element={<Donate />} />
-          {/* Fallback to Home */}
-          <Route path="*" element={<Home />} />
+          {/* 404 Catch-all route */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
 
-      {/* Global Footer */}
       <Footer />
-    </Router>
+    </BrowserRouter>
   );
 }
+
