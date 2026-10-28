@@ -349,7 +349,6 @@ a {
   position: absolute;
   top: 100%;
   left: 50%;
-  transform: translateX(-50%);
   width: 240px;
   background-color: var(--color-bg-primary);
   border-radius: var(--radius-md);
@@ -359,7 +358,22 @@ a {
   margin-top: 8px;
   display: flex;
   flex-direction: column;
-  animation: scaleUp var(--transition-fast);
+  transform-origin: top center;
+  /* Every state below declares the FULL transform (translateX + translateY + scale)
+     in one go, so opening/closing never overwrites the centering translateX --
+     that's what caused the left/right jerk. */
+  transform: translateX(-50%) translateY(-6px) scale(0.96);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity var(--transition-fast), transform var(--transition-fast), visibility var(--transition-fast);
+}
+
+.dropdown-menu.is-open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0) scale(1);
 }
 
 .dropdown-item {
@@ -504,7 +518,7 @@ a {
 
 .footer-grid-container {
   display: grid;
-  grid-template-cols: 2.5fr 1fr 1fr 1fr;
+  grid-template-columns: 2.5fr 1fr 1fr 1fr;
   gap: 48px;
   margin-bottom: 60px;
 }
@@ -577,7 +591,7 @@ a {
 
 .footer-bottom-container {
   display: grid;
-  grid-template-cols: 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 48px;
 }
 
@@ -611,18 +625,18 @@ a {
 
 @media (max-width: 1024px) {
   .footer-grid-container {
-    grid-template-cols: 1.5fr 1fr 1fr;
+    grid-template-columns: 1.5fr 1fr 1fr;
     gap: 32px;
   }
 }
 
 @media (max-width: 768px) {
   .footer-grid-container {
-    grid-template-cols: 1fr;
+    grid-template-columns: 1fr;
     gap: 40px;
   }
   .footer-bottom-container {
-    grid-template-cols: 1fr;
+    grid-template-columns: 1fr;
     gap: 32px;
   }
 }
@@ -810,7 +824,7 @@ a {
 
 .stats-grid {
   display: grid;
-  grid-template-cols: repeat(4, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 32px;
 }
 
@@ -869,13 +883,13 @@ a {
 
 @media (max-width: 1024px) {
   .stats-grid {
-    grid-template-cols: repeat(2, 1fr);
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
 @media (max-width: 640px) {
   .stats-grid {
-    grid-template-cols: 1fr;
+    grid-template-columns: 1fr;
   }
   .stats-title-desc {
     font-size: 1.5rem;
@@ -913,7 +927,7 @@ a {
 
 .programs-grid {
   display: grid;
-  grid-template-cols: repeat(2, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 40px;
 }
 
@@ -972,7 +986,7 @@ a {
 
 @media (max-width: 768px) {
   .programs-grid {
-    grid-template-cols: 1fr;
+    grid-template-columns: 1fr;
   }
   .program-content {
     padding: 24px;
@@ -992,7 +1006,7 @@ a {
 
 .csr-container {
   display: grid;
-  grid-template-cols: 1.2fr 0.8fr;
+  grid-template-columns: 1.2fr 0.8fr;
   align-items: center;
   gap: 48px;
 }
@@ -1069,7 +1083,7 @@ a {
 
 @media (max-width: 900px) {
   .csr-container {
-    grid-template-cols: 1fr;
+    grid-template-columns: 1fr;
     gap: 32px;
   }
   .csr-graphic {
@@ -1122,7 +1136,7 @@ a {
 /* Subpage / Program Layout Styles */
 .details-grid {
   display: grid;
-  grid-template-cols: 1.1fr 0.9fr;
+  grid-template-columns: 1.1fr 0.9fr;
   gap: 48px;
   align-items: center;
 }
@@ -1155,7 +1169,7 @@ a {
 
 .numbers-grid {
   display: grid;
-  grid-template-cols: repeat(3, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 32px;
   margin-top: 48px;
 }
@@ -1190,7 +1204,7 @@ a {
 
 .tech-features-grid {
   display: grid;
-  grid-template-cols: repeat(3, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 32px;
   margin-top: 48px;
 }
@@ -1238,7 +1252,7 @@ a {
 
 .centers-grid {
   display: grid;
-  grid-template-cols: repeat(4, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 32px;
   margin-top: 48px;
 }
@@ -1270,33 +1284,33 @@ a {
 
 @media (max-width: 1024px) {
   .details-grid {
-    grid-template-cols: 1fr;
+    grid-template-columns: 1fr;
     gap: 32px;
   }
   .details-image {
     height: 300px;
   }
   .centers-grid {
-    grid-template-cols: repeat(2, 1fr);
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
 @media (max-width: 768px) {
   .numbers-grid {
-    grid-template-cols: 1fr;
+    grid-template-columns: 1fr;
   }
   .tech-features-grid {
-    grid-template-cols: 1fr;
+    grid-template-columns: 1fr;
   }
   .centers-grid {
-    grid-template-cols: 1fr;
+    grid-template-columns: 1fr;
   }
 }
 
 /* Case Study Block Styles */
 .case-grid {
   display: grid;
-  grid-template-cols: 1.1fr 0.9fr;
+  grid-template-columns: 1.1fr 0.9fr;
   gap: 48px;
   align-items: center;
 }
@@ -1382,7 +1396,7 @@ a {
 
 @media (max-width: 900px) {
   .case-grid {
-    grid-template-cols: 1fr;
+    grid-template-columns: 1fr;
     gap: 32px;
   }
   .case-graphic-card {
@@ -1519,7 +1533,7 @@ a {
 /* Partnership Form Styles */
 .form-grid {
   display: grid;
-  grid-template-cols: 0.9fr 1.1fr;
+  grid-template-columns: 0.9fr 1.1fr;
   gap: 48px;
   align-items: flex-start;
 }
@@ -1612,7 +1626,7 @@ a {
 
 .form-row {
   display: grid;
-  grid-template-cols: 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 16px;
 }
 
@@ -1686,7 +1700,7 @@ a {
 
 @media (max-width: 1024px) {
   .form-grid {
-    grid-template-cols: 1fr;
+    grid-template-columns: 1fr;
     gap: 48px;
   }
   .form-wrapper-box {
@@ -1696,7 +1710,7 @@ a {
 
 @media (max-width: 640px) {
   .form-row {
-    grid-template-cols: 1fr;
+    grid-template-columns: 1fr;
     gap: 0;
   }
   .radio-tabs-group {
@@ -1894,6 +1908,10 @@ a {
   justify-content: center;
   animation: fadeIn 0.2s var(--transition-fast);
   padding: 24px;
+}
+
+.payment-processing-overlay[hidden] {
+  display: none;
 }
 
 .processing-card {

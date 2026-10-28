@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Feeding India — Admin</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    margin: 0;
+    background: #f7f7f8;
+    color: #111;
+  }
+  header {
+    background: #b3251d;
+    color: white;
+    padding: 20px 32px;
+  }
+  header h1 { margin: 0; font-size: 1.4rem; }
+  .contain { max-width: 1100px; margin: 0 auto; padding: 32px 20px; }
+  .login-box {
+    max-width: 360px;
+    margin: 80px auto;
+    background: white;
+    padding: 32px;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  }
+  .login-box h2 { margin-top: 0; }
+  input[type="password"] {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 1rem;
+    margin-bottom: 12px;
+  }
+  button {
+    background: #b3251d;
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+  }
+  button:hover { background: #8f1d17; }
+  .error-text { color: #b3251d; font-size: 0.9rem; margin: 0 0 12px; }
+  .toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; gap: 12px; flex-wrap: wrap; }
+  .tabs { display: flex; gap: 8px; }
+  .tab-btn {
+    background: white;
+    color: #333;
+    border: 1px solid #ddd;
+  }
+  .tab-btn.active { background: #b3251d; color: white; border-color: #b3251d; }
+  .toolbar-right { display: flex; align-items: center; gap: 10px; }
+  #last-updated { font-size: 0.8rem; color: #888; }
+  .refresh-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    background: white;
+    border: 1px solid #ddd;
+    color: #b3251d;
+  }
+  .refresh-btn:hover { background: #fbeceb; border-color: #b3251d; }
+  .refresh-btn svg { width: 18px; height: 18px; transition: transform 0.2s ease; }
+  .refresh-btn.spinning svg { animation: spin 0.7s linear infinite; }
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  th, td {
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 1px solid #eee;
+    font-size: 0.9rem;
+  }
+  th { background: #fafafa; font-weight: 600; }
+  tr:last-child td { border-bottom: none; }
+  #app-content { display: none; }
+  .empty-state { padding: 40px; text-align: center; color: #777; }
+  .action-btn {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    border-radius: 6px;
+    margin-right: 6px;
+  }
+  .action-btn.secondary { background: white; color: #333; border: 1px solid #ddd; }
+  .action-btn.secondary:hover { background: #f0f0f0; }
+  .action-btn.danger { background: white; color: #b3251d; border: 1px solid #e3b3b0; }
+  .action-btn.danger:hover { background: #fbeceb; }
+  td.actions-cell { white-space: nowrap; }
+  td input[type="text"], td input[type="number"] {
+    width: 100%;
+    min-width: 90px;
+    padding: 6px 8px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 0.85rem;
+  }
+</style>
+</head>
+<body>
+
+<header><h1>Feeding India — Admin</h1></header>
+
+<div id="login-view" class="login-box">
+  <h2>Admin Login</h2>
+  <p id="login-error" class="error-text" hidden>Incorrect password.</p>
+  <input type="password" id="admin-password-input" placeholder="Enter admin password" />
+  <button id="login-btn">View submissions</button>
+</div>
+
+<div id="app-content" class="contain">
+  <div class="toolbar">
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="donations">Donations</button>
+      <button class="tab-btn" data-tab="partners">Partner Requests</button>
+    </div>
+    <div class="toolbar-right">
+      <span id="last-updated"></span>
+      <button id="refresh-btn" class="refresh-btn" type="button" title="Refresh" aria-label="Refresh">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+          <polyline points="21 3 21 9 15 9" />
+        </svg>
+      </button>
+    </div>
+  </div>
+  <div id="table-area"></div>
+</div>
+
+<script>
+  let adminPassword = '';
+  let currentTab = 'donations';
+
+  const loginView = document.getElementById('login-view');
+  const appContent = document.getElementById('app-content');
+  const loginError = document.getElementById('login-error');
+  const tableArea = document.getElementById('table-area');
+  const refreshBtn = document.getElementById('refresh-btn');
+  const lastUpdatedEl = document.getElementById('last-updated');
+
+  document.getElementById('login-btn').addEventListener('click', attemptLogin);
+  document.getElementById('admin-password-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') attemptLogin();
+  });
+
+  refreshBtn.addEventListener('click', () => loadData());
+
+  document.querySelectorAll('.tab-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentTab = btn.dataset.tab;
+      loadData();
+    });
+  });
+
+  async function attemptLogin() {
+    const val = document.getElementById('admin-password-input').value;
+    adminPassword = val;
+    const ok = await loadData();
+    if (ok) {
+      loginView.style.display = 'none';
+      appContent.style.display = 'block';
+    } else {
+      loginError.hidden = false;
+    }
+  }
+
+  async function loadData() {
+    refreshBtn.classList.add('spinning');
+    refreshBtn.disabled = true;
+    try {
+      const res = await fetch(`/api/admin/${currentTab}`, {
+        headers: { 'x-admin-password': adminPassword },
+      });
+      if (res.status === 401) return false;
+
+      const data = await res.json();
+      renderTable(currentTab, data[currentTab] || []);
+      lastUpdatedEl.textContent = `Updated ${new Date().toLocaleTimeString()}`;
+      return true;
+    } catch (err) {
+      tableArea.innerHTML = `<p class="empty-state">Could not reach the server. Is it running?</p>`;
+      return false;
+    } finally {
+      refreshBtn.classList.remove('spinning');
+      refreshBtn.disabled = false;
+    }
+  }
+
+  // Keep the last-fetched rows around, keyed by id, so Edit mode has
+  // something to read from and Cancel has something to revert to.
+  let rowsById = {};
+
+  function renderTable(tab, rows) {
+    rowsById = {};
+    rows.forEach((r) => { rowsById[r._id] = r; });
+
+    if (!rows.length) {
+      tableArea.innerHTML = `<p class="empty-state">No ${tab} yet.</p>`;
+      return;
+    }
+
+    if (tab === 'donations') {
+      tableArea.innerHTML = `
+        <table>
+          <thead><tr>
+            <th>Date</th><th>Name</th><th>Email</th><th>Phone</th>
+            <th>Amount (\u20B9)</th><th>Meals</th><th>Txn ID</th><th>Tax Cert</th><th>Actions</th>
+          </tr></thead>
+          <tbody>
+            ${rows.map((d) => donationRowHtml(d, false)).join('')}
+          </tbody>
+        </table>
+      `;
+    } else {
+      tableArea.innerHTML = `
+        <table>
+          <thead><tr>
+            <th>Date</th><th>Type</th><th>Org</th><th>Contact</th>
+            <th>Email</th><th>Phone</th><th>Message</th><th>Actions</th>
+          </tr></thead>
+          <tbody>
+            ${rows.map((p) => partnerRowHtml(p, false)).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    wireRowActions();
+  }
+
+  function donationRowHtml(d, editing) {
+    if (!editing) {
+      return `
+        <tr id="row-${d._id}">
+          <td>${new Date(d.createdAt).toLocaleString()}</td>
+          <td>${escapeHtml(d.name)}</td>
+          <td>${escapeHtml(d.email)}</td>
+          <td>${escapeHtml(d.phone)}</td>
+          <td>${d.amount}</td>
+          <td>${d.mealsFunded}</td>
+          <td>${d.transactionId}</td>
+          <td>${d.requireTaxCert ? 'Yes' : 'No'}</td>
+          <td class="actions-cell">
+            <button class="action-btn secondary" data-action="edit" data-id="${d._id}">Edit</button>
+            <button class="action-btn danger" data-action="delete" data-id="${d._id}">Delete</button>
+          </td>
+        </tr>
+      `;
+    }
+    return `
+      <tr id="row-${d._id}">
+        <td>${new Date(d.createdAt).toLocaleString()}</td>
+        <td><input type="text" data-field="name" value="${escapeAttr(d.name)}" /></td>
+        <td><input type="text" data-field="email" value="${escapeAttr(d.email)}" /></td>
+        <td><input type="text" data-field="phone" value="${escapeAttr(d.phone)}" /></td>
+        <td><input type="number" data-field="amount" value="${d.amount}" min="100" /></td>
+        <td>${d.mealsFunded}</td>
+        <td>${d.transactionId}</td>
+        <td>${d.requireTaxCert ? 'Yes' : 'No'}</td>
+        <td class="actions-cell">
+          <button class="action-btn secondary" data-action="save" data-id="${d._id}" data-tab="donations">Save</button>
+          <button class="action-btn secondary" data-action="cancel" data-id="${d._id}">Cancel</button>
+        </td>
+      </tr>
+    `;
+  }
+
+  function partnerRowHtml(p, editing) {
+    if (!editing) {
+      return `
+        <tr id="row-${p._id}">
+          <td>${new Date(p.createdAt).toLocaleString()}</td>
+          <td>${escapeHtml(p.partnerType)}</td>
+          <td>${escapeHtml(p.orgName || '—')}</td>
+          <td>${escapeHtml(p.contactName)}</td>
+          <td>${escapeHtml(p.email)}</td>
+          <td>${escapeHtml(p.phone)}</td>
+          <td>${escapeHtml(p.message)}</td>
+          <td class="actions-cell">
+            <button class="action-btn secondary" data-action="edit" data-id="${p._id}">Edit</button>
+            <button class="action-btn danger" data-action="delete" data-id="${p._id}">Delete</button>
+          </td>
+        </tr>
+      `;
+    }
+    return `
+      <tr id="row-${p._id}">
+        <td>${new Date(p.createdAt).toLocaleString()}</td>
+        <td>${escapeHtml(p.partnerType)}</td>
+        <td><input type="text" data-field="orgName" value="${escapeAttr(p.orgName || '')}" /></td>
+        <td><input type="text" data-field="contactName" value="${escapeAttr(p.contactName)}" /></td>
+        <td><input type="text" data-field="email" value="${escapeAttr(p.email)}" /></td>
+        <td><input type="text" data-field="phone" value="${escapeAttr(p.phone)}" /></td>
+        <td><input type="text" data-field="message" value="${escapeAttr(p.message)}" /></td>
+        <td class="actions-cell">
+          <button class="action-btn secondary" data-action="save" data-id="${p._id}" data-tab="partners">Save</button>
+          <button class="action-btn secondary" data-action="cancel" data-id="${p._id}">Cancel</button>
+        </td>
+      </tr>
+    `;
+  }
+
+  function wireRowActions() {
+    tableArea.querySelectorAll('[data-action="edit"]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.id;
+        const row = rowsById[id];
+        const rowEl = document.getElementById(`row-${id}`);
+        const html = currentTab === 'donations' ? donationRowHtml(row, true) : partnerRowHtml(row, true);
+        rowEl.outerHTML = html;
+        wireRowActions(); // re-wire, since outerHTML replaced the element
+      });
+    });
+
+    tableArea.querySelectorAll('[data-action="cancel"]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.id;
+        const row = rowsById[id];
+        const rowEl = document.getElementById(`row-${id}`);
+        const html = currentTab === 'donations' ? donationRowHtml(row, false) : partnerRowHtml(row, false);
+        rowEl.outerHTML = html;
+        wireRowActions();
+      });
+    });
+
+    tableArea.querySelectorAll('[data-action="delete"]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.id;
+        if (!confirm('Delete this entry? This cannot be undone.')) return;
+        try {
+          const res = await fetch(`/api/admin/${currentTab}/${id}`, {
+            method: 'DELETE',
+            headers: { 'x-admin-password': adminPassword },
+          });
+          const data = await res.json();
+          if (!res.ok || !data.success) {
+            alert(data.message || 'Could not delete.');
+            return;
+          }
+          loadData(); // re-fetch in place, no page reload
+        } catch (err) {
+          alert('Could not reach the server.');
+        }
+      });
+    });
+
+    tableArea.querySelectorAll('[data-action="save"]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.id;
+        const tab = btn.dataset.tab;
+        const rowEl = document.getElementById(`row-${id}`);
+        const updates = {};
+        rowEl.querySelectorAll('[data-field]').forEach((input) => {
+          updates[input.dataset.field] = input.value;
+        });
+
+        try {
+          const res = await fetch(`/api/admin/${tab}/${id}`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-admin-password': adminPassword,
+            },
+            body: JSON.stringify(updates),
+          });
+          const data = await res.json();
+          if (!res.ok || !data.success) {
+            alert(data.message || 'Could not save changes.');
+            return;
+          }
+          loadData(); // re-fetch in place, no page reload
+        } catch (err) {
+          alert('Could not reach the server.');
+        }
+      });
+    });
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str ?? '';
+    return div.innerHTML;
+  }
+
+  function escapeAttr(str) {
+    return String(str ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+  }
+</script>
+
+</body>
+</html>
